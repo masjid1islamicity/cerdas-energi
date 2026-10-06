@@ -25,6 +25,7 @@ import {
   INITIAL_DEVICES,
   INITIAL_ALERTS,
   INITIAL_WEEKLY_REPORT,
+  INITIAL_MONTHLY_TARGET,
 } from './data/mockData';
 import {
   SolarTelemetry,
@@ -35,6 +36,7 @@ import {
   NotificationAlert,
   WeeklyReportData,
   AiRecommendation,
+  MonthlySavingsTarget,
 } from './types';
 import { Header } from './components/Header';
 import { OverconsumptionAlertBanner } from './components/OverconsumptionAlertBanner';
@@ -47,6 +49,9 @@ import { WeeklyReportModal } from './components/WeeklyReportModal';
 import { SecurityEncryptionCenter } from './components/SecurityEncryptionCenter';
 import { AddDeviceModal } from './components/AddDeviceModal';
 import { NotificationDrawer } from './components/NotificationDrawer';
+import { MonthlySavingsTargetCard } from './components/MonthlySavingsTargetCard';
+import { SetMonthlyTargetModal } from './components/SetMonthlyTargetModal';
+import { DailyIslamicEcoTipCard } from './components/DailyIslamicEcoTipCard';
 import { soundFx } from './utils/soundEffects';
 
 export default function App() {
@@ -59,11 +64,13 @@ export default function App() {
   const [devices, setDevices] = useState<SmartDevice[]>(INITIAL_DEVICES);
   const [alerts, setAlerts] = useState<NotificationAlert[]>(INITIAL_ALERTS);
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReportData>(INITIAL_WEEKLY_REPORT);
+  const [monthlyTarget, setMonthlyTarget] = useState<MonthlySavingsTarget>(INITIAL_MONTHLY_TARGET);
 
   // Modals and Drawer
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false);
   const [isAlertsDrawerOpen, setIsAlertsDrawerOpen] = useState(false);
+  const [isSetTargetModalOpen, setIsSetTargetModalOpen] = useState(false);
   const [isAiAutoPilot, setIsAiAutoPilot] = useState(true);
   const [activeScenario, setActiveScenario] = useState<string>('peak_solar');
 
@@ -344,6 +351,49 @@ export default function App() {
               activeScenario={activeScenario}
             />
 
+            {/* Real-Time Monthly Savings Target & Visual Progress Bar */}
+            <MonthlySavingsTargetCard
+              targetData={monthlyTarget}
+              onOpenSettings={() => setIsSetTargetModalOpen(true)}
+              onSimulateIncrement={(amount) => {
+                setMonthlyTarget((prev) => {
+                  const updatedSavings = prev.currentSavingsRp + amount;
+                  return {
+                    ...prev,
+                    currentSavingsRp: updatedSavings,
+                  };
+                });
+                showToast(`Simulasi berhasil: Penghematan bertambah +Rp ${amount.toLocaleString('id-ID')}. Progress bar diperbarui secara real-time!`);
+              }}
+            />
+
+            {/* Daily Islamic & Environmental Sustainability Tips Card */}
+            <DailyIslamicEcoTipCard
+              solar={solar}
+              home={home}
+              battery={battery}
+              weather={weather}
+              onApplyQuickAction={(actionText) => {
+                if (actionText.toLowerCase().includes('pemanas')) {
+                  const updated = devices.map((d) =>
+                    d.id === 'dev-water-heater' ? { ...d, isOn: true, currentWatts: 900 } : d
+                  );
+                  setDevices(updated);
+                  recalculateEnergySystem(updated);
+                  showToast('Tindakan Berhasil: Pompa Kalor Pemanas Air diaktifkan menggunakan tenaga surya gratis!');
+                } else if (actionText.toLowerCase().includes('ac')) {
+                  const updated = devices.map((d) =>
+                    d.id === 'dev-ac-living' ? { ...d, currentWatts: 420 } : d
+                  );
+                  setDevices(updated);
+                  recalculateEnergySystem(updated);
+                  showToast('Tindakan Berhasil: Smart AC disesuaikan ke suhu 25°C Eco Mode untuk menghindari Israf.');
+                } else {
+                  showToast(`Tindakan "${actionText}" berhasil diterapkan sesuai prinsip Hifz al-Bi'ah.`);
+                }
+              }}
+            />
+
             {/* Quick Dual Cards: AI Advisor Teaser & Cost Summary */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left: AI Quick Efficiency Card */}
@@ -563,6 +613,16 @@ export default function App() {
         alerts={alerts}
         onMarkAllAsRead={handleMarkAllAlertsAsRead}
         onActionClick={handleAlertActionClick}
+      />
+
+      <SetMonthlyTargetModal
+        isOpen={isSetTargetModalOpen}
+        onClose={() => setIsSetTargetModalOpen(false)}
+        targetData={monthlyTarget}
+        onSaveTarget={(newTarget) => {
+          setMonthlyTarget(newTarget);
+          showToast(`Target penghematan bulanan berhasil diubah menjadi Rp ${newTarget.targetSavingsRp.toLocaleString('id-ID')}!`);
+        }}
       />
     </div>
   );

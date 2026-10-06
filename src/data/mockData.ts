@@ -7,6 +7,7 @@ import {
   NotificationAlert,
   WeeklyReportData,
   WeatherInfo,
+  MonthlySavingsTarget,
 } from '../types';
 
 export const INITIAL_WEATHER: WeatherInfo = {
@@ -239,6 +240,16 @@ export const INITIAL_WEEKLY_REPORT: WeeklyReportData = {
     'Alhamdulillah, rumah tangga Anda telah berikhtiar menjaga bumi (Hifz al-Bi\'ah) dan menghindari tabdzir/israf. Energi surya yang dipanen setara dengan menanam 5 pohon rindang dan mencegah 98,7 kg emisi karbon.',
   isSent: true,
   sentAt: '05 Okt 2026, 07:00 WIB',
+};
+
+export const INITIAL_MONTHLY_TARGET: MonthlySavingsTarget = {
+  targetSavingsRp: 650000,
+  currentSavingsRp: 472500,
+  monthName: 'Oktober 2026',
+  daysElapsed: 6,
+  totalDaysInMonth: 31,
+  isAiPacingEnabled: true,
+  notes: 'Target penghematan efisiensi panel surya & otomatisasi AI jam puncak PLN',
 };
 
 export const ISLAMIC_ECO_PRINCIPLES = [

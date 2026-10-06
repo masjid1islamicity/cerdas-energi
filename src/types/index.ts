@@ -105,6 +105,16 @@ export interface WeeklyReportData {
   isSent: boolean;
 }
 
+export interface MonthlySavingsTarget {
+  targetSavingsRp: number;
+  currentSavingsRp: number;
+  monthName: string;
+  daysElapsed: number;
+  totalDaysInMonth: number;
+  isAiPacingEnabled: boolean;
+  notes?: string;
+}
+
 export interface WeatherInfo {
   condition: string;
   temp: number;

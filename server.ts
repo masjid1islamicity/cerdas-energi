@@ -36,6 +36,94 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'UPIC Rumah Cerdas Energi API', timestamp: new Date().toISOString() });
 });
 
+// Daily Islamic & Eco Sustainability Tip Endpoint
+app.post('/api/ai/daily-tip', async (req, res) => {
+  const { solarWatts, homeWatts, batterySoC, condition, timeStr } = req.body;
+
+  const isSurplus = (solarWatts || 0) > (homeWatts || 0);
+  const isHighLoad = (homeWatts || 0) > 3000;
+
+  const prompt = `Anda adalah penasihat spiritual dan lingkungan untuk aplikasi "UPIC Unit Pelayanan Islamicity - Rumah Cerdas Energi".
+Berikan 1 "Tips Hemat Energi Harian" berbasis ajaran Islam (Al-Qur'an/Hadits terkait Hifz al-Bi'ah / Tidak Israf / Tadabbur Alam) dan prinsip keberlanjutan lingkungan yang relevan secara real-time dengan kondisi saat ini:
+- Daya Produksi Panel Surya: ${solarWatts || 0} W
+- Beban Konsumsi Rumah: ${homeWatts || 0} W
+- Status Daya: ${isSurplus ? 'Surplus listrik tenaga surya' : isHighLoad ? 'Beban tinggi mendekati kapasitas PLN' : 'Konsumsi normal'}
+- Kapasitas Baterai: ${batterySoC || 80}%
+- Cuaca: ${condition || 'Cerah'}
+
+Keluarkan output JSON dengan format:
+{
+  "title": "Judul tips singkat & inspiratif (maks 8 kata)",
+  "surahRef": "Nama Surah dan Ayat (misal QS. Al-A'raf : 31 atau QS. Yunus : 5 atau QS. Ar-Rum : 41)",
+  "arabicSnippet": "Potongan teks ayat Al-Qur'an dalam bahasa Arab",
+  "translation": "Arti terjemahan ayat dalam Bahasa Indonesia",
+  "practicalTip": "Tindakan praktis hemat energi untuk penghuni rumah saat ini (2-3 kalimat)",
+  "sustainabilityImpact": "Dampak positif nyata bagi lingkungan / tagihan",
+  "category": "Anti-Israf / Pemanfaatan Surya / Amanah Lingkungan / Ketenangan Malam",
+  "actionText": "Tindakan Cepat (misal: Maksimalkan Beban Siang / Aktifkan Eco AC / Matikan Lampu Kosong)"
+}
+HANYA kembalikan JSON yang valid tanpa markdown code block.`;
+
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.4,
+        },
+      });
+
+      if (response.text) {
+        const parsed = JSON.parse(response.text.trim());
+        return res.json({ success: true, data: parsed, source: 'gemini-3.8-flash' });
+      }
+    } catch (error: any) {
+      console.error('Gemini daily-tip call error, using local expert engine fallback:', error?.message);
+    }
+  }
+
+  // Fallback dynamic contextual tips based on real-time situation
+  let tip;
+  if (isSurplus) {
+    tip = {
+      title: "Maksimalkan Berkah Surya di Siang Hari",
+      surahRef: "QS. Yunus : 5",
+      arabicSnippet: "هُوَ ٱلَّذِى جَعَلَ ٱلشَّمْسَ ضِيَآءً وَٱلْقَمَرَ نُورًا",
+      translation: "“Dialah yang menjadikan matahari bersinar dan bulan bercahaya...”",
+      practicalTip: `Produksi panel surya saat ini mencapai ${(solarWatts || 3450).toLocaleString('id-ID')} W. Manfaatkan limpahan energi karunia Allah ini untuk mencuci pakaian atau memanaskan air sebelum matahari condong ke barat.`,
+      sustainabilityImpact: "Menghindari emisi pembangkit batu bara PLN dan memaksimalkan listrik 100% ramah lingkungan.",
+      category: "Pemanfaatan Surya",
+      actionText: "Jadwalkan Pemanas Air Sekarang"
+    };
+  } else if (isHighLoad) {
+    tip = {
+      title: "Jauhi Israf Saat Beban Listrik Meningkat",
+      surahRef: "QS. Al-A'raf : 31",
+      arabicSnippet: "وَكُلُوا۟ وَٱشْرَبُوا۟ وَلَا تُسْرِفُوٓا۟ ۚ إِنَّهُۥ لَا يُحِبُّ ٱلْمُسْرِفِينَ",
+      translation: "“...Janganlah berlebih-lebihan. Sungguh, Allah tidak menyukai orang-orang yang berlebih-lebihan.”",
+      practicalTip: `Konsumsi listrik rumah mencapai ${(homeWatts || 3200).toLocaleString('id-ID')} W. Naikkan suhu AC ke 25°C dan matikan penerangan di ruang yang tidak digunakan untuk menjaga adab hemat energi.`,
+      sustainabilityImpact: "Mencegah kelebihan beban MCB dan menghemat biaya tarif listrik jam puncak.",
+      category: "Anti-Israf",
+      actionText: "Aktifkan Eco-Mode AC"
+    };
+  } else {
+    tip = {
+      title: "Merawat Bumi Sebagai Amanah Khalifah",
+      surahRef: "QS. Ar-Rum : 41",
+      arabicSnippet: "ظَهَرَ ٱلْفَسَادُ فِى ٱلْبَرِّ وَٱلْبَحْرِ بِمَا كَسَبَتْ أَيْدِى ٱلنَّاسِ",
+      translation: "“Telah tampak kerusakan di darat dan di laut disebabkan karena perbuatan tangan manusia...”",
+      practicalTip: "Cabut adaptor pengisi daya gawai yang sudah penuh dan matikan saklar steker siaga untuk mengeliminasi beban vampir (vampire drain).",
+      sustainabilityImpact: "Setiap kWh yang dihemat menjaga kelestarian iklim dan bumi untuk generasi mendatang.",
+      category: "Amanah Lingkungan",
+      actionText: "Periksa Steker Standby"
+    };
+  }
+
+  return res.json({ success: true, data: tip, source: 'contextual-islamic-engine' });
+});
+
 // AI Energy Optimization Advisor
 app.post('/api/ai/optimize', async (req, res) => {
   const { telemetry, devices, weather, tariffPerKwh } = req.body;
