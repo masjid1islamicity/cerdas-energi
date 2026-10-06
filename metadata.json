@@ -1,0 +1,6 @@
+{
+  "name": "UPIC Rumah Cerdas Energi",
+  "description": "Platform rumah cerdas energi UPIC Unit Pelayanan Islamicity dengan manajemen panel surya, otomatisasi AI, pemantauan real-time, enkripsi privasi, dan laporan mingguan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
